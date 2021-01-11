@@ -13,10 +13,9 @@
     <div class="list-group">
         <div *ngFor="let r of habitRecords" class="list-group-item">
             <div class="d-flex justify-content-between">
-                <h5>{{r.date}}</h5>
-                <p>{{template['parameter']}}: {{r.value}} {{template['unit']}}</p>
+                <h5 class="mb-3">{{r.value}} {{template['unit']}}</h5>
+                <small>{{r.date}}</small>
             </div>    
-                <p></p>
                 <p>{{r.comments}}</p>
         </div>
     </div>

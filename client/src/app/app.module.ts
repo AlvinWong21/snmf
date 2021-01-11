@@ -26,6 +26,8 @@ import { NewhabitComponent } from './component/newhabit.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatNativeDateModule } from '@angular/material/core';
 
+// import { Calendar } from 'v-calendar/lib/components/calendar.umd';
+// import { DatePicker } from 'v-calendar/lib/components/date-picker.umd'
 
 const ROUTES: Routes = [
   { path: '', component: LoginComponent },
@@ -55,8 +57,7 @@ const ROUTES: Routes = [
     RouterModule.forRoot(ROUTES),
 
     MatFormFieldModule, MatInputModule, MatDatepickerModule, MatNativeDateModule,
-
-
+    // Calendar, DatePicker,
     InputTextModule, DataViewModule, BrowserAnimationsModule
   ],
   providers: [LoginService, HabitsService, CreateUserService],

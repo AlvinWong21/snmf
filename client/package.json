@@ -30,6 +30,7 @@
     "primeng": "^11.1.0-rc.1",
     "rxjs": "~6.6.0",
     "tslib": "^2.0.0",
+    "v-calendar": "^2.2.0",
     "zone.js": "~0.10.2"
   },
   "devDependencies": {
