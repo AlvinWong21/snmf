@@ -1,0 +1,27 @@
+<div class="container">
+    <div class="row my-3">
+        <div class="col d-flex justify-content-between align-items-center">
+            <button class="btn btn-outline-dark" [routerLink]="['/habits']">Back</button>
+            <button class="btn btn-primary" [routerLink]="['/newrecord', habitId]">Add</button>
+        </div>
+    </div>
+
+    <div *ngIf="template != null">
+        <h2>Records for {{template['habit_title']}}</h2>
+    </div>
+    
+    <div class="list-group">
+        <div *ngFor="let r of habitRecords" class="list-group-item">
+            <div class="d-flex justify-content-between">
+                <h5>{{r.date}}</h5>
+                <p>{{template['parameter']}}: {{r.value}} {{template['unit']}}</p>
+            </div>    
+                <p></p>
+                <p>{{r.comments}}</p>
+        </div>
+    </div>
+
+    <div *ngIf="habitRecords == undefined">
+        <h5>There are no records found.</h5>
+    </div>
+</div>

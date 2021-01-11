@@ -1,0 +1,50 @@
+<div class="container">
+    <div class="row my-3">
+        <div class="col d-flex align-items-center">
+            <button class="btn btn-outline-dark" [routerLink]="['/habits']">Back</button>
+        </div>
+    </div>
+
+    <h3>{{template.habit_title}}</h3>
+    <form [formGroup]="recordForm" (ngSubmit)="processForm()">
+
+        <div class="input-group form-group">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="basic-addon1">{{template.parameter}}: </span>
+            </div>
+            <input class="form-control" formControlName="value" type="number" name="value" id="value" placeholder="Please enter a number">
+            <div class="input-group-append">
+                <span class="input-group-text" id="basic-addon2">{{template.unit}}</span>
+            </div>
+        </div>
+
+        <div class="input-group form-group">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="basic-addon3">Date: </span>
+            </div>
+            
+            <input class="form-control" formControlName="date" value="{{today}}" type="date" name="date" id="date" min="{{startdate}}" max="{{enddate}}">
+        </div>
+
+        <div class="input-group form-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Comments</span>
+            </div>
+            <textarea class="form-control" formControlName="comments" rows="4" aria-label="Comments"></textarea>
+          </div>
+        
+        <!-- <div class="input-group form-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text" id="inputGroupFileAddon01">Upload</span>
+            </div>
+            <div class="custom-file">
+              <input type="file" accept="image/*" formControlName="file" class="custom-file-input" id="inputGroupFile01" aria-describedby="inputGroupFileAddon01">
+              <label class="custom-file-label" for="inputGroupFile01">Choose a file</label>
+            </div>
+          </div> -->
+
+          
+
+        <button class="btn btn-primary" type="submit">Submit</button>
+    </form>
+</div>

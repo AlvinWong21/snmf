@@ -1,0 +1,85 @@
+<div class="container">
+    <div class="row my-3">
+        <div class="col d-flex align-items-center">
+            <button class="btn btn-outline-dark" [routerLink]="['/habits']">Back</button>
+        </div>
+    </div>
+
+    <h2>Create New Habit</h2>
+
+    <form [formGroup]="newHabitForm" (ngSubmit)="processNewHabit()">
+        <div class="form-group">
+            <label for="title">Habit title</label>
+            <input class="form-control" type="text" formControlName="title" id="title" placeholder="Habit title">      
+        </div>
+
+        <label for="title">Parameter to record (in number format)</label>
+        <div class="input-group form-group">
+            
+            <input class="form-control" type="text" formControlName="parameter" id="parameter" placeholder="Parameter name">      
+            <input class="input-group-append form-control" type="text" formControlName="unit" id="unit" placeholder="Unit">      
+        </div>
+
+        <div class="form-group">
+            <label for="startdate">Start date</label>
+            <input class="form-control" formControlName="startdate" value="{{today}}" type="date" name="startdate" id="startdate" min="{{today}}">
+        </div>
+
+        <div class="form-group">
+            <label for="enddate">End date (optional)</label>
+            <input class="form-control" formControlName="enddate" type="date" name="enddate" id="enddate" min="{{this.today}}">
+        </div>
+
+        <label for="frequency">Frequency</label>
+        <div class="form-check" id="frequency">
+            <input class="form-check-input" formControlName="frequency" type="checkbox" value="Monday" id="flexCheckMonday">
+            <label class="form-check-label" for="flexCheckMonday">
+                Mondays
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" formControlName="frequency" type="checkbox" value="Tuesday" id="flexCheckTuesday">
+            <label class="form-check-label" for="flexCheckTuesday">
+                Tuesdays
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" formControlName="frequency" type="checkbox" value="Wednesday" id="flexCheckWednesday">
+            <label class="form-check-label" for="flexCheckWednesday">
+                Wednesdays
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" formControlName="frequency" type="checkbox" value="Thursday" id="flexCheckThursday">
+            <label class="form-check-label" for="flexCheckThursday">
+                Thursdays
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="Friday" id="flexCheckFriday">
+            <label class="form-check-label" for="flexCheckFriday">
+                Fridays
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="Saturday" id="flexCheckSaturday">
+            <label class="form-check-label" for="flexCheckSaturday">
+                Saturdays
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="Sunday" id="flexCheckSunday">
+            <label class="form-check-label" for="flexCheckSunday">
+                Sundays
+            </label>
+        </div>
+
+        <div class="form-group mt-3">
+            <button class="btn btn-primary" type="submit" [disabled]="this.newHabitForm.invalid">Create New Habit</button>
+        </div>
+
+        {{this.newHabitForm.valid}}
+    </form>
+
+    
+</div>
