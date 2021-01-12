@@ -28,20 +28,36 @@ DROP TABLE IF EXISTS `habitizer`.`habits`;
 
 CREATE TABLE IF NOT EXISTS `habitizer`.`habits` (
 `habit_id` INT NOT NULL AUTO_INCREMENT,
+`username` VARCHAR(255) NOT NULL,
 `habit_title` VARCHAR(255) NOT NULL,
 `parameter` VARCHAR(255) NOT NULL,
 `unit` VARCHAR(255) NOT NULL,
-`start_date` DATE NOT NULL,
-`end_date` DATE,
+`start_date` VARCHAR(255),
+`end_date` VARCHAR(255),
 `frequency` VARCHAR(255),
 PRIMARY KEY (habit_id)
 );
 
 select * from habits;
 
-insert into habits (habit_title, parameter, unit, start_date, end_date, frequency) values (?, ?, ?, ?, ?, ?);
+select * from habits where username = ?;
+
+insert into habits (username, habit_title, parameter, unit, start_date, end_date, frequency) values (?, ?, ?, ?, ?, ?, ?);
 
 select count(*) as count from habits where habit_title = "drink water";
 
 select habit_id, habit_title, parameter, unit, start_date from habits where habit_id = "1";
 
+DROP TABLE IF EXISTS `habitizer`.`records`;
+
+CREATE TABLE IF NOT EXISTS `habitizer`.`records` (
+`id` INT NOT NULL AUTO_INCREMENT,
+`habit_id` INT NOT NULL,
+`username` VARCHAR(255) NOT NULL,
+`ObjectId` VARCHAR(255) NOT NULL,
+PRIMARY KEY (id)
+);
+
+select * from records;
+
+insert into records (habit_id, username, ObjectId) values (?, ?, ?);

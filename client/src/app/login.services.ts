@@ -5,7 +5,7 @@ import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot } from
 @Injectable()
 export class LoginService implements CanActivate {
 
-    private token = ''
+    token: string = ''
 
     constructor(
         private http: HttpClient,
@@ -19,7 +19,6 @@ export class LoginService implements CanActivate {
         .then(result => {
                 console.info('Login Response: ', result)
                 this.token = result.token
-            
             console.log('Login Token: ', this.token)
             return true
         })
@@ -39,6 +38,7 @@ export class LoginService implements CanActivate {
 
     isLogin() {
         const token = this.token != ''
+        console.log(this.token)
         console.log(token)
         return token
     }

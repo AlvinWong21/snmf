@@ -7,14 +7,56 @@
     </div>
 
     <div *ngIf="template != null">
-        <h2>Records for {{template['habit_title']}}</h2>
+        <h2>{{template['title']}}</h2>
+    </div>
+
+    <table class="table">
+        <tr>
+            <th>
+                Start Date
+            </th>
+            <th>
+                {{template.startdate.toString().slice(0, 16)}}
+            </th>
+        </tr>
+        <tr>
+            <th>
+                End Date
+            </th>
+            <th>
+                {{template.enddate.toString().slice(0, 16)}}
+            </th>
+        </tr>
+        <tr>
+            <th>
+                Total {{template.parameter}}
+            </th>
+            <th>
+                {{totalProgress}} {{template.unit}}
+            </th>
+        </tr>
+    </table>
+
+    <div *ngIf="recordDates != undefined" class="row justify-content-center mt-4">
+        <p-calendar [inline]="true" [(ngModel)]="recordDates" selectionMode="multiple" [minDate] ="template['startdate']" [maxDate]="template['enddate']"></p-calendar>
+    </div>
+    
+    <!-- <div class="row justify-content-center mt-4">
+        <form [formGroup]="dateForm" (ngSubmit)="getDates()">
+            <p-calendar [inline]="true" values="recordDates" formControlName="dates"></p-calendar>
+    <button type="submit">Submit</button>
+        </form>
+    </div> -->
+    
+    <div *ngIf="template != null" class="mt-4">
+        <h3>Records</h3>
     </div>
     
     <div class="list-group">
         <div *ngFor="let r of habitRecords" class="list-group-item">
             <div class="d-flex justify-content-between">
                 <h5 class="mb-3">{{r.value}} {{template['unit']}}</h5>
-                <small>{{r.date}}</small>
+                <small>{{r.date.toString().slice(0, 16)}}</small>
             </div>    
                 <p>{{r.comments}}</p>
         </div>

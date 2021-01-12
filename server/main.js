@@ -23,10 +23,11 @@ const SQL_LOGIN_AUTH = `select username from users where username = ? && passwor
 const SQL_CREATE_USER_CHECK_USERNAME = `select count(*) as count from users where username = ?;`
 const SQL_CREATE_USER_CHECK_EMAIL = `select count(*) as count from users where email_address = ?;`
 const SQL_CREATE_USER = `insert into users (username, password, first_name, last_name, email_address, gender) values (?, sha1(?), ?, ?, ?, ?);`
-const SQL_QUERY_HABITS = `select * from habits;`
+const SQL_QUERY_HABITS = `select * from habits where username = ?;`
 const SQL_CREATE_HABIT_CHECK = `select count(*) as count from habits where habit_title = ?;`
-const SQL_CREATE_HABIT = `insert into habits (habit_title, parameter, unit, start_date, end_date, frequency) values (?, ?, ?, ?, ?, ?);`
+const SQL_CREATE_HABIT = `insert into habits (username, habit_title, parameter, unit, start_date, end_date, frequency) values (?, ?, ?, ?, ?, ?, ?);`
 const SQL_QUERY_TEMPLATE = `select habit_id, habit_title, parameter, unit, start_date, end_date from habits where habit_id = ?;`
+const SQL_CREATE_RECORD = `insert into records (habit_id, username, ObjectId) values (?, ?, ?);`
 
 //sql query function
 const mkQuery = (sql, pool) => {
@@ -84,7 +85,7 @@ passport.use(new LocalStrategy(
             console.log('SQL Login Authentication result: ', result)
             if (result.length == 1)
                 done(null, {
-                    username: result[0].user_id,
+                    username: result[0].username,
                     loginTime: (new Date()).toString()
                 })
             else {
@@ -110,7 +111,6 @@ const sqlQueryTemplate = mkQuery(SQL_QUERY_TEMPLATE, pool)
 
 const localStrategyAuth = mkAuth(passport)
 
-
 // const GoogleStrategy = require('passport-google-oauth').OAuth2Strategy
 
 // passport.use(new GoogleStrategy({
@@ -124,6 +124,27 @@ const localStrategyAuth = mkAuth(passport)
 //     });
 // }
 // ))
+
+const jwtSecurity = (req, res, next) => {
+    const token = req.get('Authorization')
+    if (null == token) {
+        res.status(403)
+        res.type('application/json')
+        res.json({message: 'Authorization failed'})
+        return
+    }
+    try {
+        const verified = jwt.verify(token, TOKEN_SECRET)
+        console.log('Verified token: ', verified)
+        req.token = verified
+        next()
+    } catch(err) {
+        res.status(403)
+        res.type('application/json')
+        res.json({message: 'Incorrect token', error: err})
+        return
+    }
+}
 
 const PORT = parseInt(process.argv[2]) || parseInt(process.env.PORT) || 3000
 const app = express()
@@ -181,12 +202,14 @@ app.post('/createuser', async (req, res) => {
 
 app.post('/auth/local', localStrategyAuth, (req, res) => {
     const userLogin = req.userLogin
+    console.log(userLogin.username)
     //add token here
     const timestamp = (new Date()).getTime() / 1000
     const token = jwt.sign({
         sub: req.userLogin.username,
         iss: 'habitizer',
         iat: timestamp,
+        exp: timestamp + (1000),
         data: {
             loginTime: req.userLogin.loginTime
         }
@@ -196,42 +219,41 @@ app.post('/auth/local', localStrategyAuth, (req, res) => {
     res.json({successful: userLogin, token: token})
 })
 
+// app.get('/protected/secret', (req, res, next) => {
+//     const token = req.get('Authorization')
+//     if (null == token) {
+//         res.status(403)
+//         res.type('application/json')
+//         res.json({message: 'Authorization failed'})
+//         return
+//     }
+//     try {
+//         const verified = jwt.verify(token, TOKEN_SECRET)
+//         console.log('Verified token: ', verified)
+//         req.token = verified
+//         next()
+//     } catch(err) {
+//         res.status(403)
+//         res.type('application/json')
+//         res.json({message: 'Incorrect token', error: err})
+//         return
+//     }
+// }, (req, res) => {
+//     res.status(200)
+//     res.type('application/json')
+//     res.json({ authorized: "Token valid" })
+// })
 
-
-app.get('/protected/secret', (req, res, next) => {
-    const token = req.get('Authorization')
-    if (null == token) {
-        res.status(403)
-        res.type('application/json')
-        res.json({message: 'Authorization failed'})
-        return
-    }
-    try {
-        const verified = jwt.verify(token, TOKEN_SECRET)
-        console.log('Verified token: ', verified)
-        req.token = verified
-        next()
-    } catch(err) {
-        res.status(403)
-        res.type('application/json')
-        res.json({message: 'Incorrect token', error: err})
-        return
-    }
-}, (req, res) => {
-    res.status(200)
-    res.type('application/json')
-    res.json({ authorized: "Token valid" })
-})
-
-app.get('/queryhabits', async (req, res) => {
-    const queryHabits = await sqlQueryHabits()
-    console.log(queryHabits)
+app.get('/queryhabits', jwtSecurity, async (req, res) => {
+    const user = req.token.sub
+    const queryHabits = await sqlQueryHabits(user)
     res.status(200)
     res.type('application/json')
     res.json({queryHabits})
 })
 
-app.post('/createhabit', async (req, res) => {
+app.post('/createhabit', jwtSecurity, async (req, res) => {
+    const user = req.token.sub
     const newHabit = req.body
     console.log('createhabit: ', newHabit)
 
@@ -247,6 +269,7 @@ app.post('/createhabit', async (req, res) => {
             return
         }
         const createHabitResult = await sqlCreateHabit([
+            user,
             newHabit.title,
             newHabit.parameter,
             newHabit.unit,
@@ -271,9 +294,9 @@ app.post('/createhabit', async (req, res) => {
     } 
 })
 
-app.get('/template/:id', async (req, res) => {
+app.get('/template/:id', jwtSecurity, async (req, res) => {
     const habitId = req.params['id']
-    console.log(req.params)
+    // console.log(req.params)
 
     try {
         const templateResult = await sqlQueryTemplate([habitId])
@@ -289,10 +312,11 @@ app.get('/template/:id', async (req, res) => {
     }  
 })
 
-app.get('/queryrecords/:id', async (req, res) => {
+app.get('/queryrecords/:id', jwtSecurity, async (req, res) => {
     const habitId = parseInt(req.params['id'])
-    console.log(habitId)
+    // console.log(habitId)
 
+    //also write to sql the successfully added record ID.
     try{
         const queryRecordResult = await mongo.db(MONGO_DB)
         .collection(MONGO_COLLECTION)
@@ -330,11 +354,14 @@ app.get('/queryrecords/:id', async (req, res) => {
     }
 })
 
-app.post('/createrecord', async (req, res) => {
+app.post('/createrecord', jwtSecurity, async (req, res) => {
     const data = req.body
-    console.log(data)
-
+    console.log("creating record: ", data)
+    let recordId
+    const conn = await pool.getConnection()
     try {
+        await conn.beginTransaction
+
         const newRecordResult = await mongo.db(MONGO_DB)
         .collection(MONGO_COLLECTION)
         .insertOne({
@@ -343,17 +370,56 @@ app.post('/createrecord', async (req, res) => {
             date: data.date,
             comments: data.comments
         })
-        console.log(newRecordResult.ops[0]['_id'])
-        const recordId = newRecordResult.ops[0]['_id']
+        // console.log(newRecordResult.ops[0]['_id'])
+        this.recordId = newRecordResult.ops[0]['_id']
+
+        const [result, _] = await conn.query(SQL_CREATE_RECORD, [data.hId, req.token.sub, this.recordId.toString()])
+        // console.log(result)
+        await conn.commit()
+
         res.status(201)
         res.type('application/json')
-        res.json({recordID: recordId})
+        res.json({recordID: this.recordId})
     }catch(err) {
+        conn.rollback()
+        // console.log("recordId: ", this.recordId)
+        const deletedMongo = await mongo.db(MONGO_DB)
+        .collection(MONGO_COLLECTION)
+        .deleteOne( { "_id": ObjectId(this.recordId) } )
+        console.log(deletedMongo)
         res.status(401)
         res.type('application/json')
         res.json({message: 'New record creation unsuccessful'})
+    }finally {
+        conn.release()
     }
 })
+
+
+// app.post('/createrecord', jwtSecurity, async (req, res) => {
+//     const data = req.body
+//     console.log("creating record: ", data)
+
+//     try {
+//         const newRecordResult = await mongo.db(MONGO_DB)
+//         .collection(MONGO_COLLECTION)
+//         .insertOne({
+//             habitID: data.hId,
+//             value: data.value,
+//             date: data.date,
+//             comments: data.comments
+//         })
+//         console.log(newRecordResult.ops[0]['_id'])
+//         const recordId = newRecordResult.ops[0]['_id']
+//         res.status(201)
+//         res.type('application/json')
+//         res.json({recordID: recordId})
+//     }catch(err) {
+//         res.status(401)
+//         res.type('application/json')
+//         res.json({message: 'New record creation unsuccessful'})
+//     }
+// })
 
 //promise function for SQL database
 const p0 = (async () => {

@@ -2,6 +2,7 @@ import { query } from '@angular/animations';
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Habits, HabitsService } from '../habits.service';
+import { LoginService } from '../login.services';
 
 @Component({
   selector: 'app-habits',
@@ -15,13 +16,15 @@ export class HabitsComponent implements OnInit {
 
   constructor(
     private router: Router,
-    private hbtSvc: HabitsService
+    private hbtSvc: HabitsService,
+    private lgnSvc: LoginService
   ) { }
 
   ngOnInit(): void {
     this.habitList = []
     this.queryHabits()
     console.log(this.habitList)
+    console.log(this.lgnSvc.token)
   }
 
   async queryHabits() {

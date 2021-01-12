@@ -13,18 +13,15 @@ import { LoginService } from './login.services';
 import { ErrorComponent } from './component/error.component';
 import { FlexLayoutModule } from '@angular/flex-layout';
 
-import {MatFormFieldModule} from '@angular/material/form-field';
-import {MatInputModule} from '@angular/material/input';
-import {MatDatepickerModule} from '@angular/material/datepicker';
-
 import {InputTextModule} from 'primeng/inputtext';
-import {DataViewModule} from 'primeng/dataview';
+import {CalendarModule} from 'primeng/calendar';
+
 import { HabitsService } from './habits.service';
 import { CreateuserComponent } from './component/createuser.component';
 import { CreateUserService } from './createuser.service';
 import { NewhabitComponent } from './component/newhabit.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { MatNativeDateModule } from '@angular/material/core';
+// import { MatNativeDateModule } from '@angular/material/core';
 
 // import { Calendar } from 'v-calendar/lib/components/calendar.umd';
 // import { DatePicker } from 'v-calendar/lib/components/date-picker.umd'
@@ -32,7 +29,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 const ROUTES: Routes = [
   { path: '', component: LoginComponent },
   { path: 'createuser', component: CreateuserComponent },
-  { path: 'habits', component: HabitsComponent, /*canActivate: [LoginService]*/ },
+  { path: 'habits', component: HabitsComponent, canActivate: [LoginService] },
   { path: 'habit/:id', component: HabitviewComponent },
   { path: 'newhabit', component: NewhabitComponent },
   { path: 'newrecord/:id', component: HabitrecordComponent },
@@ -52,13 +49,12 @@ const ROUTES: Routes = [
     NewhabitComponent
   ],
   imports: [
-    BrowserModule, HttpClientModule,
+    BrowserModule, HttpClientModule, BrowserAnimationsModule,
     FormsModule, ReactiveFormsModule, FlexLayoutModule,
     RouterModule.forRoot(ROUTES),
 
-    MatFormFieldModule, MatInputModule, MatDatepickerModule, MatNativeDateModule,
     // Calendar, DatePicker,
-    InputTextModule, DataViewModule, BrowserAnimationsModule
+    InputTextModule, CalendarModule
   ],
   providers: [LoginService, HabitsService, CreateUserService],
   bootstrap: [AppComponent]

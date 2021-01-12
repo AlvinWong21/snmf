@@ -33,7 +33,8 @@ export class NewhabitComponent implements OnInit {
   }
 
   dateNow() {
-    this.today = (new Date()).toISOString().slice(0, 10)
+    this.today = (new Date())
+    console.log("Today's date: ", this.today)
   }
   
   async processNewHabit() {
@@ -41,8 +42,8 @@ export class NewhabitComponent implements OnInit {
        title: this.newHabitForm.get('title').value,
        parameter: this.newHabitForm.get('parameter').value,
        unit: this.newHabitForm.get('unit').value,
-       startdate: this.newHabitForm.get('startdate').value,
-       enddate: this.newHabitForm.get('enddate').value,
+       startdate: this.newHabitForm.get('startdate').value.toISOString(),
+       enddate: (this.newHabitForm.get('enddate').value) ? this.newHabitForm.get('enddate').value.toISOString():null,
        frequency: this.newHabitForm.get('frequency').value
      }
      

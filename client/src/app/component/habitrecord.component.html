@@ -5,46 +5,28 @@
         </div>
     </div>
 
-    <h3>{{template.habit_title}}</h3>
+    <h3>{{template.title}}</h3>
     <form [formGroup]="recordForm" (ngSubmit)="processForm()">
 
+        <div class="form-group">
+          <label for="date">Date</label>
+          <br>
+          <p-calendar formControlName="date" [minDate] ="startdate" [maxDate]="enddate" showIcon="true"></p-calendar>
+        </div>
+
+      <label for="value">{{template.parameter}}</label>
         <div class="input-group form-group">
-            <div class="input-group-prepend">
-                <span class="input-group-text" id="basic-addon1">{{template.parameter}}: </span>
-            </div>
             <input class="form-control" formControlName="value" type="number" name="value" id="value" placeholder="Please enter a number">
             <div class="input-group-append">
                 <span class="input-group-text" id="basic-addon2">{{template.unit}}</span>
             </div>
         </div>
 
-        <div class="input-group form-group">
-            <div class="input-group-prepend">
-                <span class="input-group-text" id="basic-addon3">Date: </span>
-            </div>
-            
-            <input class="form-control" formControlName="date" value="{{today}}" type="date" name="date" id="date" min="{{startdate}}" max="{{enddate}}">
+        <div class="form-group">
+            <label for="value">Comments</label>
+            <textarea class="form-control" formControlName="comments" rows="4" aria-label="Comments"></textarea>
         </div>
 
-        <div class="input-group form-group">
-            <div class="input-group-prepend">
-              <span class="input-group-text">Comments</span>
-            </div>
-            <textarea class="form-control" formControlName="comments" rows="4" aria-label="Comments"></textarea>
-          </div>
-        
-        <!-- <div class="input-group form-group">
-            <div class="input-group-prepend">
-              <span class="input-group-text" id="inputGroupFileAddon01">Upload</span>
-            </div>
-            <div class="custom-file">
-              <input type="file" accept="image/*" formControlName="file" class="custom-file-input" id="inputGroupFile01" aria-describedby="inputGroupFileAddon01">
-              <label class="custom-file-label" for="inputGroupFile01">Choose a file</label>
-            </div>
-          </div> -->
-
-          
-
-        <button class="btn btn-primary" type="submit">Submit</button>
+        <button class="btn btn-primary" type="submit" [disabled]="recordForm.invalid">Submit</button>
     </form>
 </div>
