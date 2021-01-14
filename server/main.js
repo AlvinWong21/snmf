@@ -518,6 +518,8 @@ app.post('/createrecord', jwtSecurity, async (req, res) => {
     }
 })
 
+app.use(express.static(__dirname + '/client'))
+
 //promise function for SQL database
 const p0 = (async () => {
     const conn = await pool.getConnection()

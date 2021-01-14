@@ -1,4 +1,5 @@
 /node_modules
 /certs
 .env
-.env for cloud
+.env cloud
+.env local

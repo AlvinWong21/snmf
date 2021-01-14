@@ -27,6 +27,7 @@ export class LoginService implements CanActivate {
         .catch(err => {
             if (err.status == 401) {
                 console.info('Login Error: ', err.error)
+                alert('Incorrect Login. \nPlease try again or create a new account.')
                 return false
             }
         })
