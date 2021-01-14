@@ -45,7 +45,7 @@ select * from habits where username = ?;
 
 insert into habits (username, habit_title, parameter, unit, start_date, end_date, calendar_id) values (?, ?, ?, ?, ?, ?, ?);
 
-select count(*) as count from habits where habit_title = ?;
+select count(*) as count from habits where username = ? && habit_title = ?;
 
 select habit_id, habit_title, parameter, unit, start_date from habits where habit_id = ?;
 

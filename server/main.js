@@ -32,7 +32,7 @@ const SQL_CREATE_USER_CHECK_USERNAME = `select count(*) as count from users wher
 const SQL_CREATE_USER_CHECK_EMAIL = `select count(*) as count from users where email_address = ?;`
 const SQL_CREATE_USER = `insert into users (username, password, first_name, last_name, email_address, is_google, calendar_id) values (?, sha1(?), ?, ?, ?, ?, ?);`
 const SQL_QUERY_HABITS = `select * from habits where username = ?;`
-const SQL_CREATE_HABIT_CHECK = `select count(*) as count from habits where habit_title = ?;`
+const SQL_CREATE_HABIT_CHECK = `select count(*) as count from habits where username = ? && habit_title = ?;`
 const SQL_CREATE_HABIT = `insert into habits (username, habit_title, parameter, unit, start_date, end_date, calendar_id) values (?, ?, ?, ?, ?, ?, ?);`
 const SQL_QUERY_TEMPLATE = `select habit_id, habit_title, parameter, unit, start_date, end_date from habits where habit_id = ?;`
 const SQL_CREATE_RECORD = `insert into records (habit_id, username, ObjectId) values (?, ?, ?);`
@@ -336,7 +336,7 @@ app.post('/createhabit', jwtSecurity, async (req, res) => {
 
     try {
         console.log(newHabit.title)
-        const habitCheckResult = await sqlCreateHabitCheck([newHabit.title])
+        const habitCheckResult = await sqlCreateHabitCheck([newHabit.title, req.token.sub])
         const habitExists = habitCheckResult[0].count
         console.log(habitExists)
         if (habitExists != 0) {
