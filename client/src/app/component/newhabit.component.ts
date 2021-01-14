@@ -26,9 +26,8 @@ export class NewhabitComponent implements OnInit {
       title: this.fb.control('', Validators.required),
       parameter: this.fb.control('', Validators.required),
       unit: this.fb.control('', Validators.required),
-      frequency: this.fb.control(''),
       startdate: this.fb.control('',Validators.required),
-      enddate: this.fb.control('')
+      enddate: this.fb.control('', Validators.required)
     })
   }
 
@@ -38,13 +37,18 @@ export class NewhabitComponent implements OnInit {
   }
   
   async processNewHabit() {
-     const newHabit = {
-       title: this.newHabitForm.get('title').value,
-       parameter: this.newHabitForm.get('parameter').value,
-       unit: this.newHabitForm.get('unit').value,
-       startdate: this.newHabitForm.get('startdate').value.toISOString(),
-       enddate: (this.newHabitForm.get('enddate').value) ? this.newHabitForm.get('enddate').value.toISOString():null,
-       frequency: this.newHabitForm.get('frequency').value
+    const startDate = this.newHabitForm.get('startdate').value
+    const endDate = this.newHabitForm.get('enddate').value
+     
+
+    const newHabit = {
+      title: this.newHabitForm.get('title').value,
+      parameter: this.newHabitForm.get('parameter').value,
+      unit: this.newHabitForm.get('unit').value,
+      startdate: startDate.toISOString(),
+      calendarStartDate: this.getStartDate(startDate),
+      enddate: (endDate) ? endDate.toISOString():null,
+      calendarEndDate: this.getEndDate(endDate)
      }
      
      console.log('New habit details: ', newHabit)
@@ -53,5 +57,22 @@ export class NewhabitComponent implements OnInit {
      console.log(result)
 
      this.router.navigate(['/habits'])
+  }
+
+  getStartDate(date) {
+    const year = date.getFullYear()
+    const month = date.getMonth()+1
+    const day = date.getDate()
+    return `${year}-${month}-${day}`
+  }
+
+  getEndDate(date) {
+    const year = date.getFullYear()
+    let month = date.getMonth()+1
+    if(month < 10){
+      month = `0${month}`
+    }
+    const day = date.getDate()+1
+    return `${year}${month}${day}`
   }
 }

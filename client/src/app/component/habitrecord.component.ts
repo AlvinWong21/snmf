@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HabitsService } from '../habits.service';
 import * as moment from 'moment';
 
@@ -13,7 +13,6 @@ export class HabitrecordComponent implements OnInit {
 
   recordForm: FormGroup
   template
-  // today
   startdate
   enddate
 

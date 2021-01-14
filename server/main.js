@@ -1,31 +1,39 @@
+require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
 const cors = require('cors')
-const withQuery = require('with-query')
+const withQuery = require('with-query').default
 const fetch = require('node-fetch')
 const jwt = require('jsonwebtoken')
 const mysql = require('mysql2/promise')
 const { MongoClient, ObjectId } = require('mongodb')
 
+//they said so API
+const QUOTES = 'https://quotes.rest/qod'
+let QOD = "If you are working on something that you really care about, you don't have to be pushed."
+
+//google calendar
+const GOOGLE_CREATE_CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar'
+
 //SQL Database
 const pool = mysql.createPool({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || 'root',
-    database: process.env.DB_NAME || 'habitizer',
-    connectionLimit: process.env.DB_CONN_LIMIT || 4,
-    timezone: '+08:00'
+    host: process.env.SQL_DB_HOST,
+    port: process.env.SQL_DB_PORT,
+    user: process.env.SQL_DB_USER,
+    password: process.env.SQL_DB_PASSWORD,
+    database: process.env.SQL_DB_NAME,
+    connectionLimit: process.env.SQL_DB_CONN_LIMIT,
+    timezone: process.env.SQL_DB_TIMEZONE
 })
 
 //sql query statements
-const SQL_LOGIN_AUTH = `select username from users where username = ? && password = sha1(?);`
+const SQL_LOGIN_AUTH = `select * from users where username = ? && password = sha1(?);`
 const SQL_CREATE_USER_CHECK_USERNAME = `select count(*) as count from users where username = ?;`
 const SQL_CREATE_USER_CHECK_EMAIL = `select count(*) as count from users where email_address = ?;`
-const SQL_CREATE_USER = `insert into users (username, password, first_name, last_name, email_address, gender) values (?, sha1(?), ?, ?, ?, ?);`
+const SQL_CREATE_USER = `insert into users (username, password, first_name, last_name, email_address, is_google, calendar_id) values (?, sha1(?), ?, ?, ?, ?, ?);`
 const SQL_QUERY_HABITS = `select * from habits where username = ?;`
 const SQL_CREATE_HABIT_CHECK = `select count(*) as count from habits where habit_title = ?;`
-const SQL_CREATE_HABIT = `insert into habits (username, habit_title, parameter, unit, start_date, end_date, frequency) values (?, ?, ?, ?, ?, ?, ?);`
+const SQL_CREATE_HABIT = `insert into habits (username, habit_title, parameter, unit, start_date, end_date, calendar_id) values (?, ?, ?, ?, ?, ?, ?);`
 const SQL_QUERY_TEMPLATE = `select habit_id, habit_title, parameter, unit, start_date, end_date from habits where habit_id = ?;`
 const SQL_CREATE_RECORD = `insert into records (habit_id, username, ObjectId) values (?, ?, ?);`
 
@@ -40,6 +48,7 @@ const mkQuery = (sql, pool) => {
             return result
         } catch(e) {
             console.error('Error querying to SQL database: ', e)
+            return e
         } finally {
             conn.release()
         }
@@ -47,10 +56,7 @@ const mkQuery = (sql, pool) => {
 }
 
 //MongoDB
-const MONGO_URL = 'mongodb://localhost:27017'
-const MONGO_DB = 'habitizerII'
-const MONGO_COLLECTION = 'records'
-const mongo = new MongoClient(MONGO_URL, {useNewUrlParser: true, useUnifiedTopology: true})
+const mongo = new MongoClient(process.env.MONGO_URL, {useNewUrlParser: true, useUnifiedTopology: true})
 
 //local authentication function
 const mkAuth = (passport) => {
@@ -71,10 +77,12 @@ const mkAuth = (passport) => {
 
 const passport = require('passport')
 const LocalStrategy = require('passport-local').Strategy
+const GoogleStrategy = require('passport-google-oauth').OAuth2Strategy
 
 //jwt token secret
 const TOKEN_SECRET = process.env.TOKEN_SECRET || 'secret'
 
+//local authentication
 passport.use(new LocalStrategy(
     {session: false},
     async (username, password, done) => {
@@ -86,7 +94,10 @@ passport.use(new LocalStrategy(
             if (result.length == 1)
                 done(null, {
                     username: result[0].username,
-                    loginTime: (new Date()).toString()
+                    loginTime: (new Date()).toString(),
+                    isGoogle: false,
+                    googleToken: null,
+                    calendarId: null,
                 })
             else {
                 done('Incorrect login', false)
@@ -99,8 +110,84 @@ passport.use(new LocalStrategy(
     }
 ))
 
+//google authentication
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: "/auth/google/redirect" 
+    }, async (accessToken, refreshToken, profile, done) => {
+        const googleAccessToken = accessToken
+        let calendarId
+        console.log('Calling google...')
+        console.log('Google profile ID: ', profile.id)
+        console.log("Access Token: ", accessToken)
+        const conn = await pool.getConnection()
+        try {
+            const [ result, _ ] = await conn.query(SQL_LOGIN_AUTH, [profile.id, profile.id])
+            console.log('Google Login Authentication result: ', result)
+            if (result.length == 1) {
+                done(null, {
+                    username: result[0].username,
+                    loginTime: (new Date()).toString(),
+                    isGoogle: true,
+                    calendarId: result[0].calendar_id,
+                    googleToken: googleAccessToken
+                })
+            }
+            else {
+                console.log("Access Token passed to else statement: ", googleAccessToken)
+                //create new google calendar for Habitizer
+                await fetch('https://www.googleapis.com/calendar/v3/calendars',
+                    {
+                        method:'post',
+                        body: JSON.stringify({ "summary": "Habitizer" }),
+                        headers: {
+                            'Authorization': `Bearer ${googleAccessToken}`,
+                            'Accept': 'appliction/json',
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                )
+                .then(result => result.json())
+                .then(result => {
+                    console.log(result)
+                    calendarId = result.id
+                })
+                .catch(json => {
+                    console.log("Google Calendar", json)
+                    console.log("errors: ", json.error.errors)
+                })
+                await sqlCreateUser([
+                    profile.id,
+                    profile.id,
+                    profile.name.givenName,
+                    profile.name.familyName,
+                    profile.emails[0].value,
+                    true,
+                    calendarId
+                ])
+                done(null, {
+                    username: profile.id,
+                    loginTime: (new Date()).toString(),
+                    isGoogle: true,
+                    calendarId,
+                    googleToken: googleAccessToken
+                })
+            }
+        }catch(e) {
+            done(e, false)
+        } finally {
+            conn.release()
+        }
+    }
+))
+
+passport.serializeUser((user, done) => {
+    console.log(user)
+    done(null, user);
+  });
+
 //constant functions
-// const sqlLoginAuth = mkQuery(SQL_LOGIN_AUTH, pool)
 const sqlCreateUserCheckUsername = mkQuery(SQL_CREATE_USER_CHECK_USERNAME, pool)
 const sqlCreateUserCheckEmail = mkQuery(SQL_CREATE_USER_CHECK_EMAIL, pool)
 const sqlCreateUser = mkQuery(SQL_CREATE_USER, pool)
@@ -110,20 +197,6 @@ const sqlQueryHabits = mkQuery(SQL_QUERY_HABITS, pool)
 const sqlQueryTemplate = mkQuery(SQL_QUERY_TEMPLATE, pool)
 
 const localStrategyAuth = mkAuth(passport)
-
-// const GoogleStrategy = require('passport-google-oauth').OAuth2Strategy
-
-// passport.use(new GoogleStrategy({
-//     clientID: GOOGLE_CLIENT_ID,
-//     clientSecret: GOOGLE_CLIENT_SECRET,
-//     callbackURL: "http://localhost:3000/auth/google/callback" 
-// },
-// function(accessToken, refreshToken, profile, done) {
-//     User.findOrCreate({ googleId: profile.id }, function (err, user) {
-//         return done(err, user);
-//     });
-// }
-// ))
 
 const jwtSecurity = (req, res, next) => {
     const token = req.get('Authorization')
@@ -153,19 +226,8 @@ app.use(morgan('combined'))
 app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
-
-// app.get('/auth/google',
-//     passport.authenticate('google', 
-//         { scope: ['https://www.googleapis.com/auth/plus.login'] }
-//     )
-// )
-
-// app.get('/auth/google/callback', 
-//     passport.authenticate('google', { failureRedirect: '/login' }),
-//     function(req, res) {
-//         res.redirect('/');
-//     }
-// )
+app.use(passport.initialize())
+app.use(passport.session())
 
 app.post('/createuser', async (req, res) => {
     const newUserCred = req.body
@@ -179,20 +241,27 @@ app.post('/createuser', async (req, res) => {
         if ((userExists != 0) || (emailExists != 0)) {
             res.status(409)
             res.type('application/json')
-            res.json({message: 'New account creation failed, user already exist'})
+            res.json({message: 'New account creation failed, username or email already exist'})
             return
         }
-    await sqlCreateUser([
+    const createUserResult = await sqlCreateUser([
             newUserCred.username,
             newUserCred.password,
             newUserCred.firstname,
             newUserCred.lastname,
             newUserCred.email,
-            newUserCred.gender
+            false,
+            null
         ])
+        if(createUserResult.errno) {
+            res.status(401)
+            res.type('application/json')
+            res.json({message: 'New account creation unsuccessful; database error. \nPlease contact support.'})
+            return
+        }
         res.status(201)
         res.type('application/json')
-        res.json({message: "New account creation successful"})
+        res.json({message: "Account creation successful. Please log in."})
     }catch(err) {
         res.status(401)
         res.type('application/json')
@@ -200,56 +269,64 @@ app.post('/createuser', async (req, res) => {
     }
 })
 
-app.post('/auth/local', localStrategyAuth, (req, res) => {
-    const userLogin = req.userLogin
-    console.log(userLogin.username)
-    //add token here
+const jwtToken = (userLogin) => {
     const timestamp = (new Date()).getTime() / 1000
-    const token = jwt.sign({
-        sub: req.userLogin.username,
+    return token = jwt.sign({
+        sub: userLogin.username,
         iss: 'habitizer',
         iat: timestamp,
         exp: timestamp + (1000),
         data: {
-            loginTime: req.userLogin.loginTime
+            loginTime: userLogin.loginTime,
+            isGoogle: userLogin.isGoogle,
+            googleToken: userLogin.googleToken,
+            calendarId: userLogin.calendarId
         }
     }, TOKEN_SECRET)
+}
+
+app.post('/auth/local', localStrategyAuth, (req, res) => {
+    const userLogin = req.userLogin
+    const token = jwtToken(userLogin)
     res.status(200)
     res.type('application/json')
     res.json({successful: userLogin, token: token})
 })
 
-// app.get('/protected/secret', (req, res, next) => {
-//     const token = req.get('Authorization')
-//     if (null == token) {
-//         res.status(403)
-//         res.type('application/json')
-//         res.json({message: 'Authorization failed'})
-//         return
-//     }
-//     try {
-//         const verified = jwt.verify(token, TOKEN_SECRET)
-//         console.log('Verified token: ', verified)
-//         req.token = verified
-//         next()
-//     } catch(err) {
-//         res.status(403)
-//         res.type('application/json')
-//         res.json({message: 'Incorrect token', error: err})
-//         return
-//     }
-// }, (req, res) => {
-//     res.status(200)
-//     res.type('application/json')
-//     res.json({ authorized: "Token valid" })
-// })
+app.get('/auth/google', passport.authenticate('google', {
+    scope: ['profile', 'email', GOOGLE_CREATE_CALENDAR_SCOPE],
+    session: false
+}))
+
+app.get('/auth/google/redirect', passport.authenticate('google', {failureRedirect: '/error'}), (req, res) => {
+    const userLogin = req.user
+    const token = jwtToken(userLogin)
+    let responseHTML = '<html><head><title>Main</title></head><body></body><script>res = %value%; window.opener.postMessage(res, "*");window.close();</script></html>'
+    responseHTML = responseHTML.replace('%value%', JSON.stringify({ 
+        successful: userLogin, 
+        token: token
+    }));
+
+    res.status(200).send(responseHTML);
+    }
+)
 
 app.get('/queryhabits', jwtSecurity, async (req, res) => {
+    if (QOD == '') { 
+        const quotesUrl = withQuery(QUOTES, {
+            category: "inspire",
+            language: "en"
+        })
+        let result = await fetch(quotesUrl)
+        result = await result.json()
+        QOD = result['contents']['quotes'][0]['quote']
+    }
+    console.log(QOD)
     const user = req.token.sub
     const queryHabits = await sqlQueryHabits(user)
     res.status(200)
     res.type('application/json')
-    res.json({queryHabits})
+    res.json([queryHabits, QOD])
 })
 
 app.post('/createhabit', jwtSecurity, async (req, res) => {
@@ -274,20 +351,72 @@ app.post('/createhabit', jwtSecurity, async (req, res) => {
             newHabit.parameter,
             newHabit.unit,
             newHabit.startdate,
-            newHabit.enddate || null,
-            newHabit.frequency || null
+            newHabit.enddate,
+            newHabit.calendarId || null
         ])
+
         if(createHabitResult.errno) {
             res.status(401)
             res.type('application/json')
             res.json({message: 'New habit creation unsuccessful'})
             return
         }
-    
+        //create event in google calendar if user account is google
+        console.log(req.token.data.isGoogle)
+        if (req.token.data.isGoogle) {
+            const createEventResult = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${req.token.data.calendarId}/events`, 
+            {
+                method:'post',
+                body: JSON.stringify({
+                    "summary": newHabit.title,
+                    "start": {
+                        // "date": newHabit.calendarStartDate
+                        "dateTime": `${newHabit.calendarStartDate}T09:00:00+08:00`,
+                        "timeZone": "Singapore"
+                    },
+                    "end": {
+                        // "date": newHabit.calendarStartDate
+                        "dateTime": `${newHabit.calendarStartDate}T09:30:00+08:00`,
+                        "timeZone": "Singapore"
+                    },
+                    "recurrence": [
+                        `RRULE:FREQ=DAILY;UNTIL=${newHabit.calendarEndDate}`
+                    ],
+                    "reminders": {
+                        "useDefault": false,
+                        "overrides": [
+                            {
+                                "method": "popup",
+                                "minutes": 0
+                            },
+                            {
+                                "method": "email",
+                                "minutes": 0
+                            }
+                        ]
+                    }
+                }),
+                headers: {
+                    'Authorization': `Bearer ${req.token.data.googleToken}`,
+                    'Accept': 'appliction/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(result => result.json())
+            .then(result => {console.log(result)})
+            .catch(err => {
+                console.log(err)
+                res.status(401)
+                res.type('application/json')
+                res.json({message: "Error creating event in Google Calendar."})
+                return
+            })
+        }
         res.status(200)
         res.type('application/json')
         res.json({message: "New habit creation successful"})
     }catch(err) {
+        console.log(err)
         res.status(401)
         res.type('application/json')
         res.json({message: 'New habit creation unsuccessful'})
@@ -296,7 +425,6 @@ app.post('/createhabit', jwtSecurity, async (req, res) => {
 
 app.get('/template/:id', jwtSecurity, async (req, res) => {
     const habitId = req.params['id']
-    // console.log(req.params)
 
     try {
         const templateResult = await sqlQueryTemplate([habitId])
@@ -314,12 +442,10 @@ app.get('/template/:id', jwtSecurity, async (req, res) => {
 
 app.get('/queryrecords/:id', jwtSecurity, async (req, res) => {
     const habitId = parseInt(req.params['id'])
-    // console.log(habitId)
 
-    //also write to sql the successfully added record ID.
     try{
-        const queryRecordResult = await mongo.db(MONGO_DB)
-        .collection(MONGO_COLLECTION)
+        const queryRecordResult = await mongo.db(process.env.MONGO_DB)
+        .collection(process.env.MONGO_COLLECTION)
         .aggregate([
             {
                 $match: { 
@@ -362,19 +488,17 @@ app.post('/createrecord', jwtSecurity, async (req, res) => {
     try {
         await conn.beginTransaction
 
-        const newRecordResult = await mongo.db(MONGO_DB)
-        .collection(MONGO_COLLECTION)
+        const newRecordResult = await mongo.db(process.env.MONGO_DB)
+        .collection(process.env.MONGO_COLLECTION)
         .insertOne({
             habitID: data.hId,
             value: data.value,
             date: data.date,
             comments: data.comments
         })
-        // console.log(newRecordResult.ops[0]['_id'])
         this.recordId = newRecordResult.ops[0]['_id']
 
         const [result, _] = await conn.query(SQL_CREATE_RECORD, [data.hId, req.token.sub, this.recordId.toString()])
-        // console.log(result)
         await conn.commit()
 
         res.status(201)
@@ -382,9 +506,8 @@ app.post('/createrecord', jwtSecurity, async (req, res) => {
         res.json({recordID: this.recordId})
     }catch(err) {
         conn.rollback()
-        // console.log("recordId: ", this.recordId)
-        const deletedMongo = await mongo.db(MONGO_DB)
-        .collection(MONGO_COLLECTION)
+        const deletedMongo = await mongo.db(process.env.MONGO_DB)
+        .collection(process.env.MONGO_COLLECTION)
         .deleteOne( { "_id": ObjectId(this.recordId) } )
         console.log(deletedMongo)
         res.status(401)
@@ -394,32 +517,6 @@ app.post('/createrecord', jwtSecurity, async (req, res) => {
         conn.release()
     }
 })
-
-
-// app.post('/createrecord', jwtSecurity, async (req, res) => {
-//     const data = req.body
-//     console.log("creating record: ", data)
-
-//     try {
-//         const newRecordResult = await mongo.db(MONGO_DB)
-//         .collection(MONGO_COLLECTION)
-//         .insertOne({
-//             habitID: data.hId,
-//             value: data.value,
-//             date: data.date,
-//             comments: data.comments
-//         })
-//         console.log(newRecordResult.ops[0]['_id'])
-//         const recordId = newRecordResult.ops[0]['_id']
-//         res.status(201)
-//         res.type('application/json')
-//         res.json({recordID: recordId})
-//     }catch(err) {
-//         res.status(401)
-//         res.type('application/json')
-//         res.json({message: 'New record creation unsuccessful'})
-//     }
-// })
 
 //promise function for SQL database
 const p0 = (async () => {

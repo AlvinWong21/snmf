@@ -40,7 +40,8 @@ export class HabitsService {
         return this.http.get<any>('http://localhost:3000/queryhabits', {headers: headers})
         .toPromise()
         .then(result => { 
-            const habitList = result['queryHabits'].map(h => {
+            console.log(result)
+            const habitList = result[0].map(h => {
                 return {
                     id: h['habit_id'],
                     title: h['habit_title'],
@@ -49,7 +50,12 @@ export class HabitsService {
                 } as Habits
             })
             console.log('Mapped: ', habitList)
-            return habitList
+            const quote = result[1]
+            console.log(quote)
+
+            const returnResult = [habitList, quote]
+            console.log(habitList, quote)
+            return returnResult
         })
         .catch(err => {
             console.log(err)
@@ -64,28 +70,24 @@ export class HabitsService {
         .toPromise()
         .then(result => {
             console.log('Create Habit Successful: ', result)
+            return result
         })
         .catch(err => {
             if (err.status == 401) {
                 console.info('Create Habit Error: ', err.error.message)
+                return err
             }
             if (err.status == 409) {
                 console.info('Create Habit Error: ', err.error.message)
+                return err
             }
         })
     }
-
-    //get from database the list of habits for a user
-    // async viewHabit(title: string): Promise<any> {
-    //     return this.http.get<any>(`http://localhost:3000/viewhabit/${title}`)
-
-    // }
 
     getTemplate(id: string): Promise<any> {
         const headers = (new HttpHeaders()).set('Authorization', this.lgnSvc.token)
         const hId = id
         console.log(`http://localhost:3000/template/${hId}`)
-        // return await this.http.get<any>(`http://localhost:3000/template/${hId}`).toPromise()
         return this.http.get<any>(`http://localhost:3000/template/${hId}`, {headers: headers}).toPromise()
         .then(result => {
             const mappedTemplate = {
@@ -128,9 +130,7 @@ export class HabitsService {
                 comments: r['comments'],
                 recordID: r['recordID']
             }as Records
-        })       
-            // const date = (moment.utc('2016-01-01T23:35:01')['_d']);
-            // console.log(date)
+        })
             console.log("Habit service query records: ", result)
             console.log("Mapped records: ", mappedRecords)
             return mappedRecords

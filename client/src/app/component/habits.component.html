@@ -1,33 +1,38 @@
 <div class="container">
     <div class="row my-3">
         <div class="col d-flex justify-content-between align-items-center">
-            
-            <button class="btn btn-outline-dark" [routerLink]="['/']">Back</button>
-
+            <span>
+                <button class="btn btn-outline-dark" [routerLink]="['/']">Back</button>
+                <button class="btn btn-dark ml-2" (click)="logout()">Logout</button>
+            </span>
             <button class="btn btn-danger" [routerLink]="['/newhabit']">New Habit</button>
         </div>
     </div>
-
+<hr>
+    <div class="card bg-info mb-3">
+        <div class="card-header" style="color: white">Quote of the day</div>
+        <div class="card-body">
+          <h5 style="color: white">{{quote}}</h5>
+        </div>
+      </div>
+<hr>
     <h2>Current Habits</h2>
 
-    <div *ngFor="let h of habitList" class="card mb-4">
+    <div *ngFor="let h of habitList" class="card bg-light mb-4">
+        <div class="card-header"><small>{{h.startdate.toString().slice(0, 16)}} to {{h.enddate.toString().slice(0, 16)}}</small></div>
         <div class="card-body">
             <div class="row">
                 <div class="col-10 align-items-center">
                     <a (click)="viewHabit(h.id)"><h4>{{h.title}}</h4></a>
-                    <p>Started on {{h.startdate.toString().slice(0, 16)}}</p>
-                    
-                    <p *ngIf="h.enddate != 'Invalid Date'">Ends on {{h.enddate.toString().slice(0, 16)}}</p>
-                    <p *ngIf="h.enddate == 'Invalid Date'">&nbsp; </p>
                 </div>
                 <div class="col-2 d-flex justify-content-end align-items-center">
-                    <button class="btn btn-warning" [routerLink]="['/newrecord', h.id]">Add</button>
+                    <button class="btn btn-warning" style="color: white" [routerLink]="['/newrecord', h.id]">Add</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div *ngIf="habitList == undefined">
+    <div *ngIf="habitList.length == 0">
         <h3>There are no existing habits at the moment.</h3>
     </div>
 </div>

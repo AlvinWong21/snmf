@@ -21,18 +21,14 @@ import { CreateuserComponent } from './component/createuser.component';
 import { CreateUserService } from './createuser.service';
 import { NewhabitComponent } from './component/newhabit.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-// import { MatNativeDateModule } from '@angular/material/core';
-
-// import { Calendar } from 'v-calendar/lib/components/calendar.umd';
-// import { DatePicker } from 'v-calendar/lib/components/date-picker.umd'
 
 const ROUTES: Routes = [
   { path: '', component: LoginComponent },
   { path: 'createuser', component: CreateuserComponent },
-  { path: 'habits', component: HabitsComponent, canActivate: [LoginService] },
-  { path: 'habit/:id', component: HabitviewComponent },
-  { path: 'newhabit', component: NewhabitComponent },
-  { path: 'newrecord/:id', component: HabitrecordComponent },
+{ path: 'habits', component: HabitsComponent, canActivate: [LoginService] },
+  { path: 'habit/:id', component: HabitviewComponent, canActivate: [LoginService] },
+  { path: 'newhabit', component: NewhabitComponent, canActivate: [LoginService] },
+  { path: 'newrecord/:id', component: HabitrecordComponent, canActivate: [LoginService] },
   { path: 'error', component: ErrorComponent },
   { path: '**', redirectTo: '/', pathMatch: 'full' }
 ]
@@ -52,8 +48,6 @@ const ROUTES: Routes = [
     BrowserModule, HttpClientModule, BrowserAnimationsModule,
     FormsModule, ReactiveFormsModule, FlexLayoutModule,
     RouterModule.forRoot(ROUTES),
-
-    // Calendar, DatePicker,
     InputTextModule, CalendarModule
   ],
   providers: [LoginService, HabitsService, CreateUserService],

@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { HabitsService } from '../habits.service';
+import { LoginService } from '../login.services';
 
 @Component({
   selector: 'app-habitview',
@@ -13,7 +14,7 @@ export class HabitviewComponent implements OnInit {
   habitRecords
   template
   habitId = ''
-  totalProgress: number
+  totalProgress: number = 0
 
   dateForm: FormGroup
   recordDates = []
@@ -21,7 +22,8 @@ export class HabitviewComponent implements OnInit {
   constructor(
     private activatedRoute: ActivatedRoute,
     private fb: FormBuilder,
-    private hbtSvc: HabitsService
+    private hbtSvc: HabitsService,
+    private lgnSvc: LoginService
   ) { }
 
   ngOnInit(): void {
@@ -29,11 +31,6 @@ export class HabitviewComponent implements OnInit {
     this.habitId = this.activatedRoute.snapshot.params.id
     this.getTemplate(this.habitId) 
     this.queryRecords(this.habitId)
-
-    // this.getRecordDates(this.habitRecords)
-    // this.dateForm = this.fb.group({
-    //   dates: this.fb.control('')
-    // })    
   }
 
   async queryRecords(habitId: string) {
@@ -48,7 +45,6 @@ export class HabitviewComponent implements OnInit {
     const resultValues = result.map(v => {
       return v.value
     })
-    // console.log('values: ', result[0].value)
     this.totalProgress = resultValues.reduce((sum, x) => {
       return sum + x
     })
@@ -62,17 +58,7 @@ export class HabitviewComponent implements OnInit {
     console.log(this.template)
   }
 
-  // getRecordDates(records) {
-  //   return this.recordDates = records.map(r => {
-  //     return r.dates
-  //   } )
-  // }
-
-  // getDates() {
-  //   let dates = this.dateForm.get('dates').value
-  //   console.log(dates)
-
-  //   dates = dates.toISOString()
-  //   console.log("ISO String: ", dates)
-  // }
+  logout() {
+    this.lgnSvc.logout()
+  }
 }

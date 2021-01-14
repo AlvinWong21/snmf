@@ -6,6 +6,7 @@ import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot } from
 export class LoginService implements CanActivate {
 
     token: string = ''
+    googleToken: string = ''
 
     constructor(
         private http: HttpClient,
@@ -19,6 +20,7 @@ export class LoginService implements CanActivate {
         .then(result => {
                 console.info('Login Response: ', result)
                 this.token = result.token
+                this.googleToken = null
             console.log('Login Token: ', this.token)
             return true
         })
@@ -31,15 +33,28 @@ export class LoginService implements CanActivate {
         
     }
 
-    async loginGoogle() {
-        return await this.http.get('http://localhost:3000/auth/google')
-        
+    loginGoogle() {
+        this.token = ''
+        window.open('http://localhost:3000/auth/google')
+        window.addEventListener('message', message => {
+            console.log(message.data)
+            this.token = message.data.token
+            this.googleToken = message.data.token
+            if (this.isLogin()) {
+                this.router.navigate(['/habits'])
+            }
+        })
+    }
+
+    logout() {
+        this.token = ''
+        console.log(this.token)
+        this.router.navigate(['/'])
+        alert("You are logged out. Come back soon!")
     }
 
     isLogin() {
         const token = this.token != ''
-        console.log(this.token)
-        console.log(token)
         return token
     }
     canActivate(

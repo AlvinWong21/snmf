@@ -1,7 +1,6 @@
-import { query } from '@angular/animations';
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { Habits, HabitsService } from '../habits.service';
+import { HabitsService } from '../habits.service';
 import { LoginService } from '../login.services';
 
 @Component({
@@ -11,8 +10,9 @@ import { LoginService } from '../login.services';
 })
 export class HabitsComponent implements OnInit {
 
-  habitList
+  habitList = []
   habit = false
+  quote = ''
 
   constructor(
     private router: Router,
@@ -23,19 +23,20 @@ export class HabitsComponent implements OnInit {
   ngOnInit(): void {
     this.habitList = []
     this.queryHabits()
-    console.log(this.habitList)
-    console.log(this.lgnSvc.token)
   }
 
   async queryHabits() {
     const queryResult = await this.hbtSvc.queryHabits()
-    this.habitList = queryResult
+    this.habitList = queryResult[0]
+    this.quote = queryResult[1]
     console.log(queryResult)
   }
 
   async viewHabit(id) {
-    // await this.hbtSvc.
-    // console.log(title)
     this.router.navigate([`/habit/${id}`])
+  }
+
+  logout() {
+    this.lgnSvc.logout()
   }
 }

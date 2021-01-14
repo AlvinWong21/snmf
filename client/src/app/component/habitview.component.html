@@ -1,19 +1,22 @@
 <div class="container">
     <div class="row my-3">
         <div class="col d-flex justify-content-between align-items-center">
-            <button class="btn btn-outline-dark" [routerLink]="['/habits']">Back</button>
-            <button class="btn btn-primary" [routerLink]="['/newrecord', habitId]">Add</button>
+            <span>
+                <button class="btn btn-outline-dark" [routerLink]="['/habits']">Back</button>
+                <button class="btn btn-dark ml-2" (click)="logout()">Logout</button>
+            </span>
+            <button class="btn btn-warning" style="color: white" [routerLink]="['/newrecord', habitId]">Add</button>
         </div>
     </div>
-
-    <div *ngIf="template != null">
-        <h2>{{template['title']}}</h2>
+<hr>
+    <div *ngIf="template != null" class="card bg-danger mb-3">
+        <div class="card-body" style="color: white"><h2>{{template['title']}}</h2></div>
     </div>
 
     <table class="table">
         <tr>
-            <th>
-                Start Date
+            <th scope="col-3">
+                Start date
             </th>
             <th>
                 {{template.startdate.toString().slice(0, 16)}}
@@ -21,7 +24,7 @@
         </tr>
         <tr>
             <th>
-                End Date
+                End date
             </th>
             <th>
                 {{template.enddate.toString().slice(0, 16)}}
@@ -29,25 +32,19 @@
         </tr>
         <tr>
             <th>
-                Total {{template.parameter}}
+                Total {{template.parameter}} recorded
             </th>
             <th>
                 {{totalProgress}} {{template.unit}}
             </th>
         </tr>
     </table>
+<hr>
 
     <div *ngIf="recordDates != undefined" class="row justify-content-center mt-4">
         <p-calendar [inline]="true" [(ngModel)]="recordDates" selectionMode="multiple" [minDate] ="template['startdate']" [maxDate]="template['enddate']"></p-calendar>
     </div>
-    
-    <!-- <div class="row justify-content-center mt-4">
-        <form [formGroup]="dateForm" (ngSubmit)="getDates()">
-            <p-calendar [inline]="true" values="recordDates" formControlName="dates"></p-calendar>
-    <button type="submit">Submit</button>
-        </form>
-    </div> -->
-    
+<hr>
     <div *ngIf="template != null" class="mt-4">
         <h3>Records</h3>
     </div>

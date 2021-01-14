@@ -38,10 +38,7 @@ export class LoginComponent implements OnInit {
     
   }
   
-  // async loginGoogle() {
-  //   const login = await this.loginSvc.loginGoogle()
-  //   console.log(login)
-  //   this.router.navigate(['/habits'])
-  // }
-  //set route guard and routing to habitscomponent
+  async loginGoogle() {
+    await this.loginSvc.loginGoogle()
+  }
 }

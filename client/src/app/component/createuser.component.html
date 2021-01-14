@@ -4,40 +4,32 @@
             <button class="btn btn-outline-dark" [routerLink]="['/']">Back</button>
         </div>
     </div>
-
+<hr>
     <h2>Create New Account</h2>
 
     <form [formGroup]="newUserForm" (ngSubmit)="processNewUser()">
         <div class="form-group">
-            <input class="form-control" type="text" formControlName="username" id="username" placeholder="Username">
+            <label for="username">Username</label>
+            <input class="form-control" type="text" formControlName="username" id="username">
         </div>
 
         <div class="form-group">
-            <input class="form-control" type="password" formControlName="password" id="password" placeholder="Password">
+            <label for="password">Password</label>
+            <input class="form-control" type="password" formControlName="password" id="password">
+        </div>
+
+        <label for="name">Name</label>
+        <div class="input-group form-group">
+            <input class="form-control" type="text" formControlName="firstname" id="name" placeholder="first name">      
+            <input class="input-group-append form-control" type="text" formControlName="lastname" id="lastname" placeholder="last name">      
         </div>
 
         <div class="form-group">
-            <input class="form-control" type="text" formControlName="firstname" id="firstname" placeholder="First Name">
-        </div>
-
-        <div class="form-group">
-            <input class="form-control" type="text" formControlName="lastname" id="lastname" placeholder="Last Name">
-        </div>
-
-        <div class="form-group">
-            <input class="form-control" type="email" formControlName="email" id="email" placeholder="E-mail" email="true">
+            <label for="email">Email</label>
+            <input class="form-control" type="email" formControlName="email" id="email" email="true">
             <div *ngIf="newUserForm.get('email').value && newUserForm.get('email').errors">
                 <p class="small" style="color: red">Please enter a valid email.</p>
             </div>
-        </div>
-
-        <div class="form-check form-check-inline">
-            <input class="form-check-input" formControlName="gender" type="radio" name="gender" id="inlineRadio1" value="male">
-            <label class="form-check-label" for="inlineRadio1">Male</label>
-        </div>
-        <div class="form-check form-check-inline">
-            <input class="form-check-input" formControlName="gender" type="radio" name="gender" id="inlineRadio2" value="female">
-            <label class="form-check-label" for="inlineRadio2">Female</label>
         </div>
 
         <div class="form-group mt-3">

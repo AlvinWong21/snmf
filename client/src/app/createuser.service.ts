@@ -1,15 +1,6 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 
-// export interface NewAccountForm {
-//     username: string,
-//     password: string,
-//     firstname: string,
-//     lastname: string,
-//     email: string,
-//     gender: string
-// }
-
 @Injectable()
 export class CreateUserService {
 
@@ -24,13 +15,16 @@ export class CreateUserService {
         .toPromise()
         .then(result => {
             console.info('Create User Successful: ', result)
+            return [true, result.message]
         })
         .catch(err => {
             if (err.status == 401) {
                 console.info('Create User Error: ', err.error.message)
+                return [false, err.error.message]
             }
             if (err.status == 409) {
                 console.info('Create User Error: ', err.error.message)
+                return [false, err.error.message]
             }
         })
     }
